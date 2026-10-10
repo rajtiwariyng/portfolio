@@ -185,14 +185,14 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
     }
     // outside: lawn and the path up to the gate
     {
-      const lawn = new THREE.Mesh(new THREE.PlaneGeometry(60, 16), mat("#dcebc6"));
+      const lawn = new THREE.Mesh(new THREE.PlaneGeometry(90, 50), mat("#dcebc6"));
       lawn.rotation.x = -Math.PI / 2;
-      lawn.position.set(0, 0.006, 18.8);
+      lawn.position.set(0, 0.006, 35.8);
       lawn.receiveShadow = true;
       scene.add(lawn);
-      const walk = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 16), mat("#fdebd8"));
+      const walk = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 50), mat("#fdebd8"));
       walk.rotation.x = -Math.PI / 2;
-      walk.position.set(0, 0.012, 18.8);
+      walk.position.set(0, 0.012, 35.8);
       walk.receiveShadow = true;
       scene.add(walk);
       // security booth
@@ -906,7 +906,8 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
       const ox = p.x * 0.4 + (wide ? 2.2 : 0);
       const oz = (wide ? -2.5 : 3.5) + (p.z - PLAYER_START[1]) * 0.4;
       const fx = p.x + (wide && inRoom ? 3.2 : 0);
-      const fz = p.z - 0.5 + (wide ? 0 : 3);
+      // on phones the cards sit at the bottom, so keep the visitor in the upper part of the view
+      const fz = p.z - 0.5 + (wide ? 0 : inRoom ? 3.5 : 1.2);
       desiredTarget.set(ox + (fx - ox) * k, 0, oz + (fz - oz) * k);
       if (firstFrame) camTarget.copy(desiredTarget);
       firstFrame = false;
