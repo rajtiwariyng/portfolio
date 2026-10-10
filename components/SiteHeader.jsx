@@ -40,8 +40,7 @@ export default function SiteHeader() {
     <header className="hdr">
       <div className="wrap-wide hdr-in">
         <Link href="/" className="logo">
-          {site.brand.first}
-          <span>{site.brand.second}</span>
+          {site.brand.first} <span>{site.brand.second}</span>
         </Link>
         <nav className={`hdr-nav${open ? " open" : ""}`} aria-label="Main" onClick={() => setOpen(false)}>
           {LINKS.map(([label, href]) => (

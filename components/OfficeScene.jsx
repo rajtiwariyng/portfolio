@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 /* ---------- Layout of the office (world units, x = right, z = toward camera) ---------- */
-const FLOOR = { x1: -17, x2: 17, z1: -15.5, z2: 9.5 };
+const FLOOR = { x1: -17, x2: 17, z1: -15.5, z2: 20 };
+const INTRO_START = [0, 19];
 
 export const ROOM_ZONES = {
   tools: { x1: -12, x2: -5, z1: -10.5, z2: -3.5, label: "Tool Shop", sign: [-8.5, -10] },
@@ -93,11 +94,11 @@ function codeTexture() {
 }
 
 /* ---------- component ---------- */
-export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, onDepart }) {
+export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, onDepart, onIntroStart, onIntroDone, onReady }) {
   const mountRef = useRef(null);
   const [failed, setFailed] = useState(false);
-  const cbRef = useRef({ onZoneChange, onArrive, onCancel, onDepart });
-  cbRef.current = { onZoneChange, onArrive, onCancel, onDepart };
+  const cbRef = useRef({});
+  cbRef.current = { onZoneChange, onArrive, onCancel, onDepart, onIntroStart, onIntroDone, onReady };
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -106,6 +107,8 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
       renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
     } catch {
       setFailed(true);
+      cbRef.current.onIntroDone?.();
+      cbRef.current.onReady?.();
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -171,13 +174,42 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
       box(3.6, 1.6, 0.05, "", i * 5.5, 1, -15.92, { material: mat("#dcecf2", { roughness: 0.3 }), cast: false });
     }
     // front wall with signage
-    box(44, 1.3, 0.8, "#efe2cd", 0, 0, 10.4);
-    box(44, 0.12, 1.0, "#fbf3e6", 0, 1.3, 10.4);
+    for (const sx of [-1, 1]) {
+      box(19.4, 1.3, 0.8, "#efe2cd", sx * 12.3, 0, 10.4);
+      box(19.4, 0.12, 1.0, "#fbf3e6", sx * 12.3, 1.3, 10.4);
+      block(sx * 12.3, 10.4, 19.4, 0.9);
+      // gate pillars
+      box(0.7, 2.7, 0.7, "#e6dccb", sx * 2.95, 0, 10.4);
+      box(0.85, 0.15, 0.85, "#f6efe3", sx * 2.95, 2.7, 10.4);
+      block(sx * 2.95, 10.4, 0.8, 0.8);
+    }
+    // outside: lawn and the path up to the gate
+    {
+      const lawn = new THREE.Mesh(new THREE.PlaneGeometry(60, 16), mat("#dcebc6"));
+      lawn.rotation.x = -Math.PI / 2;
+      lawn.position.set(0, 0.006, 18.8);
+      lawn.receiveShadow = true;
+      scene.add(lawn);
+      const walk = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 16), mat("#fdebd8"));
+      walk.rotation.x = -Math.PI / 2;
+      walk.position.set(0, 0.012, 18.8);
+      walk.receiveShadow = true;
+      scene.add(walk);
+      // security booth
+      box(2.6, 2.3, 2.2, "#ece4d6", 5.6, 0, 14.6);
+      box(3.1, 0.25, 2.7, "#5d8f69", 5.6, 2.3, 14.6);
+      box(0.9, 0.6, 0.05, "", 4.85, 1.2, 15.72, { material: mat("#cfe3ee", { roughness: 0.3 }), cast: false });
+      block(5.6, 14.6, 2.7, 2.3);
+      const sec = textTexture("SECURITY", { font: "italic 800 64px Arial, sans-serif", fg: "#3a4a40", bg: "#f8f5ef", radius: 6, pad: 34, height: 100 });
+      const secMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.42 * sec.aspect, 0.42), new THREE.MeshBasicMaterial({ map: sec.tex }));
+      secMesh.position.set(5.95, 1.75, 15.72);
+      scene.add(secMesh);
+    }
     const banner = textTexture("RAJ'S OFFICE", { font: "italic 900 92px Arial Black, Arial, sans-serif", fg: "#ffffff", bg: "#2f6b4a", radius: 0, pad: 70, height: 140 });
     const bannerMesh = new THREE.Mesh(new THREE.PlaneGeometry(1.1 * banner.aspect, 1.1), new THREE.MeshBasicMaterial({ map: banner.tex }));
     bannerMesh.position.set(9.5, 0.68, 10.82);
     scene.add(bannerMesh);
-    const plaque = textTexture("RajDevHub", { font: "800 80px Arial, sans-serif", fg: "#2f6b4a", bg: "#ffffff", radius: 18, pad: 40, height: 130 });
+    const plaque = textTexture("Raj Tiwari", { font: "800 80px Arial, sans-serif", fg: "#2f6b4a", bg: "#ffffff", radius: 18, pad: 40, height: 130 });
     const plaqueMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.95 * plaque.aspect, 0.95), new THREE.MeshBasicMaterial({ map: plaque.tex }));
     plaqueMesh.position.set(-10, 0.68, 10.82);
     scene.add(plaqueMesh);
@@ -443,6 +475,11 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
     plant(-4.6, -1.5, 1.0, "#f2efe8");
     plant(-4.9, -2.7, 0.9, "#f2efe8");
     plant(5.6, 7.6, 1.5);
+    plant(-4.2, 12.4, 1.1);
+    plant(-4.4, 16.2, 1.0, "#f2efe8");
+    plant(8.4, 12.6, 1.2);
+    plant(-9, 13.5, 1.6);
+    plant(10.5, 17, 1.4, "#f2efe8");
     plant(-15.5, 8.2, 1.2);
     plant(15.6, -1.4, 1.1, "#f2efe8");
     plant(-15.6, -12.8, 1.2);
@@ -466,13 +503,21 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
 
     /* ---- player ---- */
     const player = person({ shirt: "#3d7cc9", pants: "#1f2a3a", hair: "#2a1a12" });
-    player.g.position.set(PLAYER_START[0], 0, PLAYER_START[1]);
+    const playIntro = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const start = playIntro ? INTRO_START : PLAYER_START;
+    player.g.position.set(start[0], 0, start[1]);
+
+    const guard = person({ shirt: "#1f2328", pants: "#1a1d22", skin: "#e8b88f", hair: "#2a1a12" });
+    guard.g.position.set(3.7, 0, 15.2);
+    guard.g.rotation.y = -0.6;
+    scene.add(guard.g);
+    block(3.7, 15.2, 0.7, 0.6);
     player.g.rotation.y = Math.PI;
     scene.add(player.g);
 
     // a colleague strolling across the lobby
     const stroller = person({ shirt: "#8db592", pants: "#3a3a3a", hair: "#7a4b2a", hairLong: true });
-    stroller.g.position.set(-3, 0, 6.6);
+    stroller.g.position.set(-4, 0, 7.2);
     scene.add(stroller.g);
 
     // click marker
@@ -508,33 +553,128 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
       return null;
     }
 
+    /* ---- receptionist escort ---- */
+    const RECEP_HOME = new THREE.Vector2(-0.4, -2.4);
+    const v2 = (pts) => pts.map(([x, z]) => new THREE.Vector2(x, z));
+    // the receptionist steps out from behind the desk on the side nearest the room
+    const exitFor = (id) => (ROUTES[id][0][0] < 0 ? [[-3.1, -2.4], [-3.1, 1.0]] : [[3.1, -2.4], [3.1, 1.0]]);
+    let recepPath = [];
+    let recepTrail = [];
+    let recepState = "desk"; // desk | escort | waiting | returning
+    let escort = null; // { id, crumbs, legs }
+    let inRoom = null;
+    let zoomGoal = 1;
+    let zoom = 1;
+    let intro = false;
+
+    function finishIntro() {
+      if (!intro) return;
+      intro = false;
+      zoomGoal = 1;
+      cbRef.current.onIntroDone?.();
+    }
+
+    function skipIntro() {
+      if (!intro) return;
+      player.g.position.set(PLAYER_START[0], 0, PLAYER_START[1]);
+      player.g.rotation.y = Math.PI;
+      path = [];
+      zoom = 1;
+      finishIntro();
+    }
+
+    function sendRecepHome() {
+      if (recepState === "desk") return;
+      recepPath = [...recepTrail.reverse(), RECEP_HOME.clone()];
+      recepTrail = [];
+      recepState = "returning";
+      escort = null;
+    }
+
+    function clearVisit() {
+      finishIntro();
+      const had = targetRoom || escort || inRoom;
+      targetRoom = null;
+      escort = null;
+      inRoom = null;
+      zoomGoal = 1;
+      sendRecepHome();
+      if (had) cbRef.current.onCancel?.();
+    }
+
     function walkToRoom(id) {
       if (!ROUTES[id]) return;
+      keys.clear();
+      finishIntro();
       const here = zoneAt(player.g.position.x, player.g.position.z);
-      // leave the current room through its own route (reversed) before heading out
-      const exit = here && here !== id ? [...ROUTES[here]].reverse().slice(1) : [];
-      path = [...exit, ...ROUTES[id]].map(([x, z]) => new THREE.Vector2(x, z));
+      inRoom = null;
       targetRoom = id;
       stuckTime = 0;
+      zoomGoal = 0.62;
+      if (!here && recepState === "desk") {
+        // from the lobby: the receptionist leads the way
+        path = [];
+        recepTrail = [];
+        recepPath = v2([...exitFor(id), ...ROUTES[id]]);
+        recepState = "escort";
+        escort = { id, crumbs: [], legs: 2 };
+      } else {
+        // already in a room: walk there directly, receptionist heads back to her desk
+        escort = null;
+        sendRecepHome();
+        const exit = here && here !== id ? [...ROUTES[here]].reverse().slice(1) : [];
+        path = v2([...exit, ...ROUTES[id]]);
+      }
       cbRef.current.onDepart?.(id);
     }
 
-    function cancelRoom() {
-      if (targetRoom) cbRef.current.onCancel?.();
+    function arrive(id) {
       targetRoom = null;
+      escort = null;
+      inRoom = id;
+      zoomGoal = 0.5;
+      cbRef.current.onArrive?.(id);
+    }
+
+    function backToReception() {
+      const from = inRoom || zoneAt(player.g.position.x, player.g.position.z);
+      inRoom = null;
+      targetRoom = null;
+      escort = null;
+      zoomGoal = 1;
+      sendRecepHome();
+      const back = from ? [...ROUTES[from]].reverse() : [];
+      path = v2([...back, PLAYER_START]);
+      stuckTime = 0;
+    }
+
+    function exploreOffice() {
+      inRoom = null;
+      zoomGoal = 1;
+      sendRecepHome();
+    }
+
+    function cancelRoom() {
+      clearVisit();
     }
 
     function walkToPoint(x, z) {
       cancelRoom();
       path = [new THREE.Vector2(x, z)];
-      targetRoom = null;
       stuckTime = 0;
       marker.position.x = x;
       marker.position.z = z;
       marker.material.opacity = 0.9;
     }
 
-    if (apiRef) apiRef.current = { walkToRoom };
+    if (apiRef) apiRef.current = { walkToRoom, backToReception, exploreOffice, skipIntro };
+
+    if (playIntro) {
+      intro = true;
+      zoom = zoomGoal = 0.55;
+      path = [[0, 13.5], [0, 9], PLAYER_START].map(([x, z]) => new THREE.Vector2(x, z));
+      cbRef.current.onIntroStart?.();
+    } else cbRef.current.onIntroDone?.();
 
     /* ---------- input ---------- */
     const raycaster = new THREE.Raycaster();
@@ -601,8 +741,9 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
     const clock = new THREE.Clock();
     let raf = 0;
     let running = true;
-    let walkPhase = 0;
     let strollDir = 1;
+    let firstFrame = true;
+    let readySent = false;
     const desiredTarget = new THREE.Vector3();
 
     function animatePerson(p, moving, dt, speed = 1) {
@@ -630,7 +771,7 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
     function tick() {
       raf = requestAnimationFrame(tick);
       if (!running) return;
-      const dt = Math.min(clock.getDelta(), 0.05);
+      const dt = Math.min(clock.getDelta(), 0.1);
       const t = clock.elapsedTime;
       const p = player.g.position;
 
@@ -647,7 +788,7 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
         const step = SPEED * dt;
         moving = tryMove((mx / len) * step, (mz / len) * step);
         faceToward(player.g, mx, mz, dt);
-      } else if (path.length) {
+      } else if (path.length && !escort) {
         const wp = path[0];
         const dx = wp.x - p.x;
         const dz = wp.y - p.z;
@@ -655,13 +796,9 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
         if (dist < 0.15) {
           path.shift();
           stuckTime = 0;
-          if (!path.length && targetRoom) {
-            const id = targetRoom;
-            targetRoom = null;
-            cbRef.current.onArrive?.(id);
-          }
+          if (!path.length && targetRoom) arrive(targetRoom);
         } else {
-          const step = Math.min(dist, SPEED * dt);
+          const step = Math.min(dist, (intro ? 3.2 : SPEED) * dt);
           moving = tryMove((dx / dist) * step, (dz / dist) * step);
           faceToward(player.g, dx, dz, dt);
           if (!moving) {
@@ -669,16 +806,66 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
             if (stuckTime > 0.4) {
               path.shift();
               stuckTime = 0;
-              if (!path.length && targetRoom) {
-                const id = targetRoom;
-                targetRoom = null;
-                cbRef.current.onArrive?.(id);
-              }
+              if (!path.length && targetRoom) arrive(targetRoom);
             }
           }
         }
+      } else if (escort) {
+        // follow the receptionist's footsteps, keeping a polite distance
+        const rp = receptionist.g.position;
+        const gap = Math.hypot(rp.x - p.x, rp.z - p.z);
+        const crumbs = escort.crumbs;
+        if (crumbs.length && gap > 1.3) {
+          const c = crumbs[0];
+          const dx = c.x - p.x;
+          const dz = c.y - p.z;
+          const dist = Math.hypot(dx, dz);
+          if (dist < 0.2) crumbs.shift();
+          else {
+            const step = Math.min(dist, SPEED * dt);
+            moving = tryMove((dx / dist) * step, (dz / dist) * step);
+            faceToward(player.g, dx, dz, dt);
+            if (!moving && (stuckTime += dt) > 0.4) {
+              crumbs.shift();
+              stuckTime = 0;
+            }
+          }
+        } else faceToward(player.g, rp.x - p.x, rp.z - p.z, dt);
+        if (recepState === "waiting" && (gap <= 1.45 || !crumbs.length)) arrive(escort.id);
       }
       animatePerson(player, moving, dt);
+      if (intro && !path.length) finishIntro();
+      guard.head.rotation.y = Math.sin(t * 0.5) * 0.5;
+
+      // receptionist
+      let recepMoving = false;
+      const rp = receptionist.g.position;
+      if (recepPath.length) {
+        const wp = recepPath[0];
+        const dx = wp.x - rp.x;
+        const dz = wp.y - rp.z;
+        const d = Math.hypot(dx, dz);
+        const lag = escort ? Math.hypot(p.x - rp.x, p.z - rp.z) : 0;
+        if (d < 0.12) {
+          recepTrail.push(recepPath.shift());
+          if (escort) escort.legs--;
+        } else if (!(escort && escort.legs <= 0 && lag > 2.6)) {
+          const step = Math.min(d, SPEED * 0.8 * dt);
+          rp.x += (dx / d) * step;
+          rp.z += (dz / d) * step;
+          faceToward(receptionist.g, dx, dz, dt);
+          recepMoving = true;
+        }
+        if (escort && escort.legs <= 0) {
+          const last = escort.crumbs[escort.crumbs.length - 1];
+          if (!last || Math.hypot(last.x - rp.x, last.y - rp.z) > 0.3) escort.crumbs.push(new THREE.Vector2(rp.x, rp.z));
+        }
+        if (!recepPath.length) {
+          if (recepState === "escort") recepState = "waiting";
+          else if (recepState === "returning") recepState = "desk";
+        }
+      }
+      animatePerson(receptionist, recepMoving, dt, 0.85);
 
       const z = zoneAt(p.x, p.z);
       if (z !== currentZone) {
@@ -688,15 +875,20 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
 
       // stroller paces the lobby
       const sp = stroller.g.position;
-      sp.x += strollDir * dt * 1.6;
-      if (sp.x > 4) strollDir = -1;
-      if (sp.x < -4) strollDir = 1;
+      sp.x += strollDir * dt * 1.4;
+      if (sp.x > -2.2) strollDir = -1;
+      if (sp.x < -7) strollDir = 1;
       faceToward(stroller.g, strollDir, 0, dt);
       animatePerson(stroller, true, dt, 0.6);
 
       // idle life
-      receptionist.head.rotation.y = Math.sin(t * 0.7) * 0.35;
-      receptionist.g.rotation.y = Math.atan2(p.x - receptionist.g.position.x, p.z - receptionist.g.position.z) * 0.4;
+      if (recepState === "desk") {
+        receptionist.head.rotation.y = Math.sin(t * 0.7) * 0.35;
+        faceToward(receptionist.g, (p.x - rp.x) * 0.4, Math.max(0.5, p.z - rp.z), dt * 0.3);
+      } else if (!recepMoving) {
+        receptionist.head.rotation.y *= 0.9;
+        faceToward(receptionist.g, p.x - rp.x, p.z - rp.z, dt * 0.5);
+      }
       workers.forEach((w, i) => {
         w.arms[0].rotation.x = -0.9 + Math.sin(t * 9 + i) * 0.08;
         w.arms[1].rotation.x = -0.9 + Math.cos(t * 8 + i * 2) * 0.08;
@@ -709,12 +901,24 @@ export default function OfficeScene({ apiRef, onZoneChange, onArrive, onCancel, 
       }
 
       // camera follows loosely; on desktop keep the scene left of the reception card
-      desiredTarget.set(p.x * 0.4 + (wide ? 2.2 : 0), 0, (wide ? -2.5 : 3.5) + (p.z - PLAYER_START[1]) * 0.4);
+      zoom += (zoomGoal - zoom) * Math.min(1, dt * 1.8);
+      const k = Math.min(1, Math.max(0, (1 - zoom) / 0.28)); // 0 = overview, 1 = close follow
+      const ox = p.x * 0.4 + (wide ? 2.2 : 0);
+      const oz = (wide ? -2.5 : 3.5) + (p.z - PLAYER_START[1]) * 0.4;
+      const fx = p.x + (wide && inRoom ? 3.2 : 0);
+      const fz = p.z - 0.5 + (wide ? 0 : 3);
+      desiredTarget.set(ox + (fx - ox) * k, 0, oz + (fz - oz) * k);
+      if (firstFrame) camTarget.copy(desiredTarget);
+      firstFrame = false;
       camTarget.lerp(desiredTarget, Math.min(1, dt * 2.5));
-      camera.position.copy(camTarget).add(camOffset);
+      camera.position.copy(camTarget).addScaledVector(camOffset, zoom);
       camera.lookAt(camTarget);
 
       renderer.render(scene, camera);
+      if (!readySent) {
+        readySent = true;
+        cbRef.current.onReady?.();
+      }
     }
     tick();
 
