@@ -1,8 +1,13 @@
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
-import { posts, site } from "@/lib/site";
+import { pageMeta } from "@/lib/seo";
+import { posts } from "@/lib/site";
 
-export const metadata = { title: `Blog | ${site.fullName}` };
+export const metadata = pageMeta({
+  title: "Blog",
+  description: "Practical notes on Laravel, PHP, APIs, automation, AI integration and AWS from a backend Technical Lead.",
+  path: "/blog",
+});
 
 export default function Blog() {
   return (

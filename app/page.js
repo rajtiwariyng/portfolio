@@ -37,10 +37,16 @@ export default function Home() {
             <a href={wa} className="btn" target="_blank" rel="noreferrer">
               WhatsApp
             </a>
+            <a href={`tel:+${site.phone}`} className="btn">
+              Call {site.phoneDisplay}
+            </a>
             <a href={site.cv} className="btn" target="_blank" rel="noreferrer">
               Résumé
             </a>
           </div>
+          <p className="of-reach">
+            <a href={`mailto:${site.email}`}>{site.email}</a> · <a href={`tel:+${site.phone}`}>{site.phoneDisplay}</a> · {site.location}
+          </p>
         </section>
 
         <section className="of-rooms wrap">

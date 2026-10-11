@@ -1,9 +1,13 @@
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import { pageMeta } from "@/lib/seo";
 import { Snake, Memory } from "@/components/Games";
-import { site } from "@/lib/site";
 
-export const metadata = { title: `Game Room | ${site.fullName}` };
+export const metadata = pageMeta({
+  title: "Game Room",
+  description: "Small, fast browser games: Snake and Memory Match. No sign-up, no ads.",
+  path: "/games",
+});
 
 export default function Games() {
   return (

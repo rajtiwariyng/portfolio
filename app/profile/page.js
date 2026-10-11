@@ -1,10 +1,16 @@
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import { pageMeta } from "@/lib/seo";
 import Icon from "@/components/Icon";
 import LocalTime from "@/components/LocalTime";
-import { experience, process, services, site, techStack, work } from "@/lib/site";
+import ContactForm from "@/components/ContactForm";
+import { experience, services, site, techStack, work, workflow } from "@/lib/site";
 
-export const metadata = { title: `${site.fullName}: Full Profile | ${site.role}` };
+export const metadata = pageMeta({
+  title: `Full Profile | ${site.role}`,
+  description: `Experience, services, tech stack and 16 live platforms built by ${site.fullName}. Contact: ${site.email} · ${site.phoneDisplay}.`,
+  path: "/profile",
+});
 
 const Tags = ({ items }) => (
   <div className="tags">
@@ -52,6 +58,9 @@ export default function Profile() {
                     <Icon name="mail" /> Hire me
                   </a>
                 </div>
+                <p className="pf-reach">
+                  <a href={`mailto:${site.email}`}>{site.email}</a> · <a href={`tel:+${site.phone}`}>{site.phoneDisplay}</a>
+                </p>
               </div>
               <div className="pf-photo">
                 {site.photo ? (
@@ -152,7 +161,7 @@ export default function Profile() {
             <h2 className="sec-h">Understand first. Ship what holds up.</h2>
             <p className="sec-sub">How every project runs, from the first call to after launch.</p>
             <div className="cards">
-              {process.map((p, i) => (
+              {workflow.map((p, i) => (
                 <div key={p.title} className="card">
                   <p className="meta">0{i + 1}</p>
                   <h3>{p.title}</h3>
@@ -181,8 +190,9 @@ export default function Profile() {
                 </p>
                 <div className="contact-links">
                   <a href={`mailto:${site.email}`}>✉ {site.email}</a>
+                  <a href={`tel:+${site.phone}`}>☎ {site.phoneDisplay}</a>
                   <a href={`https://wa.me/${site.phone}`} target="_blank" rel="noreferrer">
-                    💬 WhatsApp
+                    💬 WhatsApp {site.phoneDisplay}
                   </a>
                   <a href={site.socials.linkedin} target="_blank" rel="noreferrer">
                     in LinkedIn
@@ -195,14 +205,7 @@ export default function Profile() {
                   </a>
                 </div>
               </div>
-              <form action={`mailto:${site.email}`} method="post" encType="text/plain">
-                <input name="name" placeholder="Your name" required aria-label="Your name" />
-                <input name="email" type="email" placeholder="Your email" required aria-label="Your email" />
-                <textarea name="message" rows={5} placeholder="What are you building?" required aria-label="Message" />
-                <button className="btn btn-dark" type="submit" style={{ justifySelf: "start" }}>
-                  Send message
-                </button>
-              </form>
+              <ContactForm />
             </div>
           </section>
         </div>

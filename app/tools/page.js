@@ -1,9 +1,13 @@
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
+import { pageMeta } from "@/lib/seo";
 import Tools from "@/components/Tools";
-import { site } from "@/lib/site";
 
-export const metadata = { title: `Free browser tools | ${site.fullName}` };
+export const metadata = pageMeta({
+  title: "Free browser tools",
+  description: "Free JSON formatter, Base64 encoder, word counter and case converter. Everything runs in your browser; nothing is uploaded.",
+  path: "/tools",
+});
 
 export default function ToolsPage() {
   return (
